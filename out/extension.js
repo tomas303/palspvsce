@@ -25,6 +25,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deactivate = exports.activate = void 0;
 const vscode = __importStar(require("vscode"));
+const net = __importStar(require("net"));
 const node_1 = require("vscode-languageclient/node");
 let client;
 function activate(context) {
@@ -37,13 +38,40 @@ function activate(context) {
     }
     // Get search folders from configuration
     const searchFolders = config.get('searchFolders') || [];
+    // Get connection type and TCP settings
+    const connectionType = config.get('connectionType') || 'stdio';
+    const tcpPort = config.get('tcpPort') || 8080;
+    const tcpHost = config.get('tcpHost') || 'localhost';
     console.log(`Using Pascal Language Server: ${serverPath}`);
+    console.log(`Connection type: ${connectionType}`);
     console.log(`Search Folders: ${searchFolders.join(', ')}`);
-    // Server options - using external executable
-    const serverOptions = {
-        run: { command: serverPath },
-        debug: { command: serverPath, args: ['--debug'] }
-    };
+    // Define server options based on connection type
+    let serverOptions;
+    if (connectionType === 'tcp') {
+        console.log(`Connecting via TCP: ${tcpHost}:${tcpPort}`);
+        // For TCP server connection
+        serverOptions = () => {
+            // Connect to language server via socket
+            const socket = net.connect({ port: tcpPort, host: tcpHost });
+            const result = {
+                writer: socket,
+                reader: socket
+            };
+            // Start the server separately with TCP mode
+            const cp = require('child_process');
+            // Pass the port to your server
+            cp.spawn(serverPath, [`--port=${tcpPort}`], { detached: true });
+            return Promise.resolve(result);
+        };
+    }
+    else {
+        // For standard I/O
+        console.log('Connecting via stdio');
+        serverOptions = {
+            run: { command: serverPath },
+            debug: { command: serverPath, args: ['--debug'] }
+        };
+    }
     // Options to control the language client
     const clientOptions = {
         // Register the server for Pascal documents
@@ -60,9 +88,7 @@ function activate(context) {
         // Pass initialization options with SearchFolders to match your Go implementation
         initializationOptions: {
             SearchFolders: searchFolders
-        },
-        // The client automatically sends workspace folders during initialization
-        // We don't need to set workspaceFolder here as it's handled automatically
+        }
     };
     // Create the language client and start the client
     client = new node_1.LanguageClient('pascalLanguageServer', 'Pascal Language Server', serverOptions, clientOptions);
@@ -71,8 +97,6 @@ function activate(context) {
         // If the client is already running, notify it about workspace folder changes
         if (client) {
             client.info('Workspace folders changed');
-            // Your server will automatically receive workspace folder change notifications 
-            // if it declares workspace folder capability in its initialization result
         }
     }));
     // Register configuration change event handler
@@ -82,8 +106,6 @@ function activate(context) {
             const config = vscode.workspace.getConfiguration('pascalLanguageServer');
             const searchFolders = config.get('searchFolders') || [];
             console.log(`Search Folders changed: ${searchFolders.join(', ')}`);
-            // The workspace/didChangeConfiguration notification is already automatically 
-            // sent to the server because of the synchronize.configurationSection setting
         }
     }));
     // Start the client. This will also launch the server
