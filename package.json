@@ -80,6 +80,22 @@
           },
           "default": [],
           "description": "Array of folders to search during code analysis and resolution."
+        },
+        "pascalLanguageServer.connectionType": {
+          "type": "string",
+          "enum": ["stdio", "tcp"],
+          "default": "stdio",
+          "description": "Connection type to use for the language server (stdio or tcp)."
+        },
+        "pascalLanguageServer.tcpPort": {
+          "type": "number",
+          "default": 8080,
+          "description": "TCP port for the language server when using TCP connection."
+        },
+        "pascalLanguageServer.tcpHost": {
+          "type": "string",
+          "default": "localhost",
+          "description": "TCP host for the language server when using TCP connection."
         }
       }
     }

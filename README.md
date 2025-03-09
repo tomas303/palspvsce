@@ -23,6 +23,9 @@ This extension provides language server protocol client support for Pascal and O
 This extension contributes the following settings:
 
 * `pascalLanguageServer.serverPath`: Path to the Pascal Language Server executable (required).
+* `pascalLanguageServer.connectionType`: Connection type to use ("stdio" or "tcp").
+* `pascalLanguageServer.tcpPort`: TCP port for the language server when using TCP connection (default: 8080).
+* `pascalLanguageServer.tcpHost`: TCP host for the language server (default: localhost).
 * `pascalLanguageServer.trace.server`: Controls the verbosity of communication traces between VSCode and the language server.
 * `pascalLanguageServer.searchFolders`: Array of folders to search during code analysis and resolution.
 
@@ -31,7 +34,18 @@ This extension contributes the following settings:
 1. Install this extension
 2. Set the `pascalLanguageServer.serverPath` setting to point to your Go-based Pascal language server executable
 3. Configure `pascalLanguageServer.searchFolders` with the paths your language server should search
-4. Open a Pascal file to activate the extension
+4. Choose your connection type (stdio or tcp)
+5. If using TCP, configure the port (your server should accept a --port parameter)
+6. Open a Pascal file to activate the extension
+
+## Debugging
+
+For easier debugging of your Go-based language server:
+
+1. Set `pascalLanguageServer.connectionType` to "tcp"
+2. Configure the port with `pascalLanguageServer.tcpPort`
+3. Run your Go server manually in debug mode with `--port=8080` (replace 8080 with your configured port)
+4. The extension will connect to your server over TCP instead of spawning a new process
 
 ## Known Issues
 

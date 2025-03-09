@@ -1,8 +1,10 @@
 import * as vscode from 'vscode';
+import * as net from 'net';
 import {
   LanguageClient,
   LanguageClientOptions,
-  ServerOptions
+  ServerOptions,
+  StreamInfo
 } from 'vscode-languageclient/node';
 
 let client: LanguageClient;
@@ -19,15 +21,45 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Get search folders from configuration
   const searchFolders = config.get<string[]>('searchFolders') || [];
+  
+  // Get connection type and TCP settings
+  const connectionType = config.get<string>('connectionType') || 'stdio';
+  const tcpPort = config.get<number>('tcpPort') || 8080;
+  const tcpHost = config.get<string>('tcpHost') || 'localhost';
 
   console.log(`Using Pascal Language Server: ${serverPath}`);
+  console.log(`Connection type: ${connectionType}`);
   console.log(`Search Folders: ${searchFolders.join(', ')}`);
   
-  // Server options - using external executable
-  const serverOptions: ServerOptions = {
-    run: { command: serverPath },
-    debug: { command: serverPath, args: ['--debug'] }
-  };
+  // Define server options based on connection type
+  let serverOptions: ServerOptions;
+  
+  if (connectionType === 'tcp') {
+    console.log(`Connecting via TCP: ${tcpHost}:${tcpPort}`);
+    // For TCP server connection
+    serverOptions = () => {
+      // Connect to language server via socket
+      const socket = net.connect({ port: tcpPort, host: tcpHost });
+      const result: StreamInfo = {
+        writer: socket,
+        reader: socket
+      };
+      
+      // Start the server separately with TCP mode
+      const cp = require('child_process');
+      // Pass the port to your server
+      cp.spawn(serverPath, [`--port=${tcpPort}`], { detached: true });
+      
+      return Promise.resolve(result);
+    };
+  } else {
+    // For standard I/O
+    console.log('Connecting via stdio');
+    serverOptions = {
+      run: { command: serverPath },
+      debug: { command: serverPath, args: ['--debug'] }
+    };
+  }
 
   // Options to control the language client
   const clientOptions: LanguageClientOptions = {
@@ -45,9 +77,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Pass initialization options with SearchFolders to match your Go implementation
     initializationOptions: {
       SearchFolders: searchFolders
-    },
-    // The client automatically sends workspace folders during initialization
-    // We don't need to set workspaceFolder here as it's handled automatically
+    }
   };
 
   // Create the language client and start the client
@@ -64,8 +94,6 @@ export function activate(context: vscode.ExtensionContext) {
       // If the client is already running, notify it about workspace folder changes
       if (client) {
         client.info('Workspace folders changed');
-        // Your server will automatically receive workspace folder change notifications 
-        // if it declares workspace folder capability in its initialization result
       }
     })
   );
@@ -78,9 +106,6 @@ export function activate(context: vscode.ExtensionContext) {
         const config = vscode.workspace.getConfiguration('pascalLanguageServer');
         const searchFolders = config.get<string[]>('searchFolders') || [];
         console.log(`Search Folders changed: ${searchFolders.join(', ')}`);
-        
-        // The workspace/didChangeConfiguration notification is already automatically 
-        // sent to the server because of the synchronize.configurationSection setting
       }
     })
   );
