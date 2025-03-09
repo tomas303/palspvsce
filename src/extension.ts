@@ -38,12 +38,16 @@ export function activate(context: vscode.ExtensionContext) {
     ],
     synchronize: {
       // Notify the server about file changes in the workspace
-      fileEvents: vscode.workspace.createFileSystemWatcher('**/*.{pas,pp,inc,dpr}')
+      fileEvents: vscode.workspace.createFileSystemWatcher('**/*.{pas,pp,inc,dpr}'),
+      // Make sure the server is notified about configuration changes
+      configurationSection: 'pascalLanguageServer'
     },
-    // Pass initialization options including search folders to the server
+    // Pass initialization options with SearchFolders to match your Go implementation
     initializationOptions: {
-      searchFolders: searchFolders
-    }
+      SearchFolders: searchFolders
+    },
+    // The client automatically sends workspace folders during initialization
+    // We don't need to set workspaceFolder here as it's handled automatically
   };
 
   // Create the language client and start the client
@@ -52,6 +56,18 @@ export function activate(context: vscode.ExtensionContext) {
     'Pascal Language Server',
     serverOptions,
     clientOptions
+  );
+
+  // Register workspace folder change event handler
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeWorkspaceFolders(e => {
+      // If the client is already running, notify it about workspace folder changes
+      if (client) {
+        client.info('Workspace folders changed');
+        // Your server will automatically receive workspace folder change notifications 
+        // if it declares workspace folder capability in its initialization result
+      }
+    })
   );
 
   // Start the client. This will also launch the server
