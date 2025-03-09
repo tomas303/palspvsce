@@ -70,6 +70,21 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
+  // Register configuration change event handler
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration(e => {
+      if (e.affectsConfiguration('pascalLanguageServer.searchFolders')) {
+        // Get updated search folders
+        const config = vscode.workspace.getConfiguration('pascalLanguageServer');
+        const searchFolders = config.get<string[]>('searchFolders') || [];
+        console.log(`Search Folders changed: ${searchFolders.join(', ')}`);
+        
+        // The workspace/didChangeConfiguration notification is already automatically 
+        // sent to the server because of the synchronize.configurationSection setting
+      }
+    })
+  );
+
   // Start the client. This will also launch the server
   client.start();
 }
