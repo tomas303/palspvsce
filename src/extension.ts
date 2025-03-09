@@ -1,42 +1,29 @@
-import * as path from 'path';
 import * as vscode from 'vscode';
 import {
   LanguageClient,
   LanguageClientOptions,
-  ServerOptions,
-  TransportKind
+  ServerOptions
 } from 'vscode-languageclient/node';
 
 let client: LanguageClient;
 
 export function activate(context: vscode.ExtensionContext) {
-  // The server is implemented in a separate project and compiled to JavaScript
-  // Get the path to the server module
-  const serverModule = context.asAbsolutePath(
-    path.join('server', 'out', 'server.js')
-  );
-
-  // Server options - using Node.js module
-  const serverOptions: ServerOptions = {
-    run: { module: serverModule, transport: TransportKind.ipc },
-    debug: {
-      module: serverModule,
-      transport: TransportKind.ipc,
-      options: { execArgv: ['--nolazy', '--inspect=6009'] }
-    }
-  };
-
-  // For executable instead of node module use this:
+  // Get server path from configuration
   const config = vscode.workspace.getConfiguration('pascalLanguageServer');
-  const customServerPath = config.get<string>('serverPath');
+  const serverPath = config.get<string>('serverPath');
   
-  if (customServerPath && customServerPath.trim() !== '') {
-    console.log(`Using custom Pascal Language Server: ${customServerPath}`);
-    const serverOptions: ServerOptions = {
-      run: { command: customServerPath },
-      debug: { command: customServerPath, args: ['--debug'] }
-    };
+  if (!serverPath || serverPath.trim() === '') {
+    vscode.window.showErrorMessage('Pascal Language Server path not configured. Please set "pascalLanguageServer.serverPath" in settings.');
+    return;
   }
+
+  console.log(`Using Pascal Language Server: ${serverPath}`);
+  
+  // Server options - using external executable
+  const serverOptions: ServerOptions = {
+    run: { command: serverPath },
+    debug: { command: serverPath, args: ['--debug'] }
+  };
 
   // Options to control the language client
   const clientOptions: LanguageClientOptions = {

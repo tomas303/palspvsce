@@ -1,11 +1,11 @@
 # Pascal Language Server Protocol Extension
 
-This extension provides language server protocol support for Pascal and Object Pascal files in Visual Studio Code.
+This extension provides language server protocol client support for Pascal and Object Pascal files in Visual Studio Code. It connects to an external Pascal language server implementation.
 
 ## Features
 
 * Syntax highlighting for Pascal files
-* Language server features:
+* Connection to a Pascal Language Server providing:
   * Diagnostics (errors, warnings)
   * Code completion
   * Hover information
@@ -16,13 +16,20 @@ This extension provides language server protocol support for Pascal and Object P
 ## Requirements
 
 * Visual Studio Code 1.74.0 or newer
+* An external Pascal Language Server implementation (developed separately in Go)
 
 ## Extension Settings
 
 This extension contributes the following settings:
 
-* `pascalLanguageServer.maxNumberOfProblems`: Controls the maximum number of problems reported by the server.
-* `pascalLanguageServer.serverPath`: Path to a custom Pascal Language Server executable (leave empty to use the built-in server).
+* `pascalLanguageServer.serverPath`: Path to the Pascal Language Server executable (required).
+* `pascalLanguageServer.trace.server`: Controls the verbosity of communication traces between VSCode and the language server.
+
+## Setup
+
+1. Install this extension
+2. Set the `pascalLanguageServer.serverPath` setting to point to your Go-based Pascal language server executable
+3. Open a Pascal file to activate the extension
 
 ## Known Issues
 
