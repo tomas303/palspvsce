@@ -53,14 +53,30 @@ function activate(context) {
         serverOptions = () => {
             // Connect to language server via socket
             const socket = net.connect({ port: tcpPort, host: tcpHost });
+            socket.on('error', (e) => {
+                console.error(`Socket error: ${e}`);
+                // Consider if the server is already running
+                console.log('Assuming server is already running, not spawning a new process');
+            });
             const result = {
                 writer: socket,
                 reader: socket
             };
-            // Start the server separately with TCP mode
+            // Only start the server if we're managing it (comment this out if you're launching manually)
+            /*
             const cp = require('child_process');
-            // Pass the port to your server
-            cp.spawn(serverPath, [`--port=${tcpPort}`], { detached: true });
+            try {
+              // Pass the port to your server
+              const serverProcess = cp.spawn(serverPath, [`--port=${tcpPort}`], {
+                detached: true,
+                stdio: 'ignore'
+              });
+              console.log(`Server process started with PID: ${serverProcess.pid}`);
+              serverProcess.unref(); // Don't wait for the child process
+            } catch (error) {
+              console.error(`Failed to start server process: ${error}`);
+            }
+            */
             return Promise.resolve(result);
         };
     }
