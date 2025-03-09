@@ -72,6 +72,14 @@
           "enum": ["off", "messages", "verbose"],
           "default": "off",
           "description": "Traces the communication between VS Code and the language server."
+        },
+        "pascalLanguageServer.searchFolders": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Array of folders to search during code analysis and resolution."
         }
       }
     }

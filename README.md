@@ -24,12 +24,14 @@ This extension contributes the following settings:
 
 * `pascalLanguageServer.serverPath`: Path to the Pascal Language Server executable (required).
 * `pascalLanguageServer.trace.server`: Controls the verbosity of communication traces between VSCode and the language server.
+* `pascalLanguageServer.searchFolders`: Array of folders to search during code analysis and resolution.
 
 ## Setup
 
 1. Install this extension
 2. Set the `pascalLanguageServer.serverPath` setting to point to your Go-based Pascal language server executable
-3. Open a Pascal file to activate the extension
+3. Configure `pascalLanguageServer.searchFolders` with the paths your language server should search
+4. Open a Pascal file to activate the extension
 
 ## Known Issues
 

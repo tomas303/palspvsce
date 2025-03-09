@@ -17,7 +17,11 @@ export function activate(context: vscode.ExtensionContext) {
     return;
   }
 
+  // Get search folders from configuration
+  const searchFolders = config.get<string[]>('searchFolders') || [];
+
   console.log(`Using Pascal Language Server: ${serverPath}`);
+  console.log(`Search Folders: ${searchFolders.join(', ')}`);
   
   // Server options - using external executable
   const serverOptions: ServerOptions = {
@@ -35,6 +39,10 @@ export function activate(context: vscode.ExtensionContext) {
     synchronize: {
       // Notify the server about file changes in the workspace
       fileEvents: vscode.workspace.createFileSystemWatcher('**/*.{pas,pp,inc,dpr}')
+    },
+    // Pass initialization options including search folders to the server
+    initializationOptions: {
+      searchFolders: searchFolders
     }
   };
 
