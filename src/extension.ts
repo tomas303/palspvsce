@@ -1,15 +1,27 @@
 import * as vscode from 'vscode';
 import * as net from 'net';
-import {
-  LanguageClient,
-  LanguageClientOptions,
-  ServerOptions,
-  StreamInfo
-} from 'vscode-languageclient/node';
+// Fix import to use require() to avoid module resolution issues
+const languageClient = require('vscode-languageclient/node');
 
-let client: LanguageClient;
+// Define types explicitly to avoid type errors
+type StreamInfo = {
+  writer: NodeJS.WritableStream;
+  reader: NodeJS.ReadableStream;
+};
+
+// Extract client from the module
+const { LanguageClient } = languageClient;
+
+// ServerOptions can be a function or an object
+type ServerOptions = 
+  | { run: any; debug: any }
+  | (() => Promise<StreamInfo>);
+
+let client: any;
 
 export function activate(context: vscode.ExtensionContext) {
+  console.log('Pascal LSP Extension activating...');
+  
   // Get server path from configuration
   const config = vscode.workspace.getConfiguration('pascalLanguageServer');
   const serverPath = config.get<string>('serverPath');
@@ -80,7 +92,7 @@ export function activate(context: vscode.ExtensionContext) {
   }
 
   // Options to control the language client
-  const clientOptions: LanguageClientOptions = {
+  const clientOptions = {
     // Register the server for Pascal documents
     documentSelector: [
       { scheme: 'file', language: 'pascal' },

@@ -26,9 +26,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.deactivate = exports.activate = void 0;
 const vscode = __importStar(require("vscode"));
 const net = __importStar(require("net"));
-const node_1 = require("vscode-languageclient/node");
+// Fix import to use require() to avoid module resolution issues
+const languageClient = require('vscode-languageclient/node');
+// Extract client from the module
+const { LanguageClient } = languageClient;
 let client;
 function activate(context) {
+    console.log('Pascal LSP Extension activating...');
     // Get server path from configuration
     const config = vscode.workspace.getConfiguration('pascalLanguageServer');
     const serverPath = config.get('serverPath');
@@ -107,7 +111,7 @@ function activate(context) {
         }
     };
     // Create the language client and start the client
-    client = new node_1.LanguageClient('pascalLanguageServer', 'Pascal Language Server', serverOptions, clientOptions);
+    client = new LanguageClient('pascalLanguageServer', 'Pascal Language Server', serverOptions, clientOptions);
     // Register workspace folder change event handler
     context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(e => {
         // If the client is already running, notify it about workspace folder changes

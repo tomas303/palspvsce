@@ -9,7 +9,7 @@
   "categories": [
     "Programming Languages"
   ],
-  "main": "./out/extension.js",
+  "main": "./dist/extension.js",
   "activationEvents": [
     "onLanguage:pascal",
     "onLanguage:objectpascal"
@@ -101,21 +101,30 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "npm run webpack",
+    "webpack": "webpack --mode production",
+    "webpack-dev": "webpack --mode development --watch",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "lint": "eslint . --ext .ts,.tsx",
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
-    "@types/node": "^22.13.10",
+    "@types/node": "^16.11.7",
     "@types/vscode": "^1.74.0",
     "@typescript-eslint/eslint-plugin": "^5.30.0",
     "@typescript-eslint/parser": "^5.30.0",
     "eslint": "^8.18.0",
-    "typescript": "^4.7.4"
+    "ts-loader": "^9.4.4",
+    "typescript": "^4.7.4",
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4"
   },
   "dependencies": {
     "vscode-languageclient": "^8.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tomas303/palspvsce.git"
   }
 }
