@@ -12,7 +12,7 @@ const config = {
   mode: 'none', // this leaves the source code as close as possible to the original
   entry: './src/extension.ts',
   output: {
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(__dirname, 'dist'), // Make sure output is going to dist folder
     filename: 'extension.js',
     libraryTarget: 'commonjs2',
     devtoolModuleFilenameTemplate: '../[resource-path]'

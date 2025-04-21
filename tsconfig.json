@@ -5,7 +5,7 @@
     "lib": ["ES2020"],
     "sourceMap": true,
     "rootDir": "src",
-    "outDir": "out",
+    "outDir": "dist", // Changed from "out" to "dist" to match webpack output
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

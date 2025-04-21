@@ -38,10 +38,31 @@ export function activate(context: vscode.ExtensionContext) {
   const connectionType = config.get<string>('connectionType') || 'stdio';
   const tcpPort = config.get<number>('tcpPort') || 8080;
   const tcpHost = config.get<string>('tcpHost') || 'localhost';
+  
+  // Get logging configuration
+  const logFile = config.get<string>('logFile') || '';
+  const logLevel = config.get<string>('logLevel') || 'error';
 
   console.log(`Using Pascal Language Server: ${serverPath}`);
   console.log(`Connection type: ${connectionType}`);
   console.log(`Search Folders: ${searchFolders.join(', ')}`);
+  console.log(`Log level: ${logLevel}`);
+  if (logFile) {
+    console.log(`Log file: ${logFile}`);
+  }
+  
+  // Prepare command line arguments
+  const commandLineArgs: string[] = [];
+  
+  // Add log level if specified - use correct flag format with dash in the middle
+  if (logLevel && logLevel !== 'none') {  // none is default
+    commandLineArgs.push(`-log-level=${logLevel}`);
+  }
+  
+  // Add log file if specified - use correct flag format with dash in the middle
+  if (logFile) {
+    commandLineArgs.push(`-log-file=${logFile}`);
+  }
   
   // Define server options based on connection type
   let serverOptions: ServerOptions;
@@ -68,8 +89,9 @@ export function activate(context: vscode.ExtensionContext) {
       /*
       const cp = require('child_process');
       try {
-        // Pass the port to your server
-        const serverProcess = cp.spawn(serverPath, [`--port=${tcpPort}`], { 
+        // Pass the port to your server - port flag might also use dashes, adjust if needed
+        const tcpArgs = [...commandLineArgs, `-port=${tcpPort}`];
+        const serverProcess = cp.spawn(serverPath, tcpArgs, { 
           detached: true,
           stdio: 'ignore'
         });
@@ -85,9 +107,18 @@ export function activate(context: vscode.ExtensionContext) {
   } else {
     // For standard I/O
     console.log('Connecting via stdio');
+    console.log(`Command line args: ${commandLineArgs.join(' ')}`);
+    
+    // Single server options configuration with command line arguments
     serverOptions = {
-      run: { command: serverPath },
-      debug: { command: serverPath, args: ['--debug'] }
+      run: { 
+        command: serverPath,
+        args: commandLineArgs
+      },
+      debug: { 
+        command: serverPath, 
+        args: commandLineArgs
+      }
     };
   }
 
