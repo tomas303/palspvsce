@@ -33,6 +33,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Get search folders from configuration
   const searchFolders = config.get<string[]>('searchFolders') || [];
+  const unitScopeNames = config.get<string[]>('unitScopeNames') || [];
   
   // Get connection type and TCP settings
   const connectionType = config.get<string>('connectionType') || 'stdio';
@@ -46,6 +47,7 @@ export function activate(context: vscode.ExtensionContext) {
   console.log(`Using Pascal Language Server: ${serverPath}`);
   console.log(`Connection type: ${connectionType}`);
   console.log(`Search Folders: ${searchFolders.join(', ')}`);
+  console.log(`Unit scope names: ${unitScopeNames.join(', ')}`);
   console.log(`Log level: ${logLevel}`);
   if (logFile) {
     console.log(`Log file: ${logFile}`);
@@ -135,9 +137,10 @@ export function activate(context: vscode.ExtensionContext) {
       // Make sure the server is notified about configuration changes
       configurationSection: 'pascalLanguageServer'
     },
-    // Pass initialization options with SearchFolders to match your Go implementation
+    // Pass initialization options
     initializationOptions: {
-      SearchFolders: searchFolders
+      SearchFolders: searchFolders,
+      unitScopeNames: unitScopeNames
     }
   };
 

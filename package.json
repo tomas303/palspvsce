@@ -79,7 +79,15 @@
             "type": "string"
           },
           "default": [],
-          "description": "Array of folders to search during code analysis and resolution."
+          "description": "Array of folders to search units."
+        },
+        "pascalLanguageServer.unitScopeNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Array of unit scope names for units resolution."
         },
         "pascalLanguageServer.connectionType": {
           "type": "string",
