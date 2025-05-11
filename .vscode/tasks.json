@@ -39,10 +39,11 @@
 				"fileLocation": ["relative", "${workspaceFolder}"],
 				"pattern": [
 					{
-						"regexp": "\\[tsl\\] ERROR in (.*)?\\((\\d+),(\\d+)\\)",
+						"regexp": "\\[tsl\\] ERROR in (.*)?\\((\\d+),(\\d+)\\): (.+)$",
 						"file": 1,
 						"line": 2,
-						"column": 3
+						"column": 3,
+						"message": 4
 					}
 				],
 				"background": {
