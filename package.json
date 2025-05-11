@@ -105,16 +105,49 @@
           "default": "localhost",
           "description": "TCP host for the language server when using TCP connection."
         },
-        "pascalLanguageServer.logFile": {
+        "pascalLanguageServer.logMainFile": {
           "type": "string",
           "default": "",
-          "description": "Path to file where server logs will be written. If not set, logs will be written to stderr."
+          "description": "Main log path(default stderr)."
         },
-        "pascalLanguageServer.logLevel": {
+        "pascalLanguageServer.logMainLevel": {
           "type": "string",
           "enum": ["debug", "info", "warn", "error", "none"],
           "default": "none",
-          "description": "Log level for the language server."
+          "description": "Main log level."
+        },
+        "pascalLanguageServer.logAntlrErrorFile": {
+          "type": "string",
+          "default": "",
+          "description": "Antlr error log path(default stderr)."
+        },
+        "pascalLanguageServer.logAntlrErrorLevel": {
+          "type": "string",
+          "enum": ["debug", "info", "warn", "error", "none"],
+          "default": "none",
+          "description": "Antlr error log level."
+        },
+        "pascalLanguageServer.logAntlrTraceFile": {
+          "type": "string",
+          "default": "",
+          "description": "Antlr trace log path(default stderr)."
+        },
+        "pascalLanguageServer.logAntlrTraceLevel": {
+          "type": "string",
+          "enum": ["debug", "info", "warn", "error", "none"],
+          "default": "none",
+          "description": "Antlr trace log level."
+        },
+        "pascalLanguageServer.logStructureFile": {
+          "type": "string",
+          "default": "",
+          "description": "Structure log path(default stderr)."
+        },
+        "pascalLanguageServer.logStructureLevel": {
+          "type": "string",
+          "enum": ["debug", "info", "warn", "error", "none"],
+          "default": "none",
+          "description": "Structure log level."
         }
       }
     }

@@ -41,31 +41,59 @@ export function activate(context: vscode.ExtensionContext) {
   const tcpHost = config.get<string>('tcpHost') || 'localhost';
   
   // Get logging configuration
-  const logFile = config.get<string>('logFile') || '';
-  const logLevel = config.get<string>('logLevel') || 'error';
+  const logMainFile = config.get<string>('logMainFile') || '';
+  const logMainLevel = config.get<string>('logMainLevel') || '';
+  const logAntlrErrorFile = config.get<string>('logAntlrErrorFile') || '';
+  const logAntlrErrorLevel = config.get<string>('logAntlrErrorLevel') || '';
+  const logAntlrTraceFile = config.get<string>('logAntlrTraceFile') || '';
+  const logAntlrTraceLevel = config.get<string>('logAntlrTraceLevel') || '';
+  const logStructureFile = config.get<string>('logStructureFile') || '';
+  const logStructureLevel = config.get<string>('logStructureLevel') || '';
 
   console.log(`Using Pascal Language Server: ${serverPath}`);
   console.log(`Connection type: ${connectionType}`);
   console.log(`Search Folders: ${searchFolders.join(', ')}`);
   console.log(`Unit scope names: ${unitScopeNames.join(', ')}`);
-  console.log(`Log level: ${logLevel}`);
-  if (logFile) {
-    console.log(`Log file: ${logFile}`);
-  }
+  console.log(`Main log level: ${logMainLevel}`);
+  console.log(`Main log file: ${logMainFile}`);
+  console.log(`AntlrError log level: ${logAntlrErrorLevel}`);
+  console.log(`AntlrError log file: ${logAntlrErrorFile}`);
+  console.log(`AntlrTrace log level: ${logAntlrTraceLevel}`);
+  console.log(`AntlrTrace log file: ${logAntlrTraceFile}`);
+  console.log(`Structure log level: ${logStructureLevel}`);
+  console.log(`Structure log file: ${logStructureFile}`);
   
   // Prepare command line arguments
   const commandLineArgs: string[] = [];
   
-  // Add log level if specified - use correct flag format with dash in the middle
-  if (logLevel && logLevel !== 'none') {  // none is default
-    commandLineArgs.push(`-log-level=${logLevel}`);
+  if (logMainLevel && logMainLevel !== 'none') {
+    commandLineArgs.push(`-log-level-main=${logMainLevel}`);
+  }
+  if (logMainFile) {
+    commandLineArgs.push(`-log-file-main=${logMainFile}`);
+  }
+  if (logAntlrErrorLevel && logAntlrErrorLevel !== 'none') {
+    commandLineArgs.push(`-log-level-antlr-error=${logAntlrErrorLevel}`);
+  }
+  if (logAntlrErrorFile) {
+    commandLineArgs.push(`-log-file-antlr-error=${logAntlrErrorFile}`);
+  }
+  if (logAntlrTraceLevel && logAntlrTraceLevel !== 'none') {
+    commandLineArgs.push(`-log-level-antlr-trace=${logAntlrTraceLevel}`);
+  }
+  if (logAntlrTraceFile) {
+    commandLineArgs.push(`-log-file-antlr-trace=${logAntlrTraceFile}`);
+  }
+  if (logStructureLevel && logStructureLevel !== 'none') {
+    commandLineArgs.push(`-log-level-structure=${logStructureLevel}`);
+  }
+  if (logStructureFile) {
+    commandLineArgs.push(`-log-file-structure=${logStructureFile}`);
   }
   
-  // Add log file if specified - use correct flag format with dash in the middle
-  if (logFile) {
-    commandLineArgs.push(`-log-file=${logFile}`);
-  }
   
+
+
   // Define server options based on connection type
   let serverOptions: ServerOptions;
   
