@@ -34,6 +34,11 @@ export function activate(context: vscode.ExtensionContext) {
   // Get search folders from configuration
   const searchFolders = config.get<string[]>('searchFolders') || [];
   const unitScopeNames = config.get<string[]>('unitScopeNames') || [];
+  // Ensure boolean value regardless of how it's stored in JSON
+  const prefetchUnitsValue = config.get('prefetchUnits');
+  const prefetchUnits = typeof prefetchUnitsValue === 'string' ? 
+    prefetchUnitsValue.toLowerCase() === 'true' : 
+    Boolean(prefetchUnitsValue);
   
   // Get connection type and TCP settings
   const connectionType = config.get<string>('connectionType') || 'stdio';
@@ -54,6 +59,7 @@ export function activate(context: vscode.ExtensionContext) {
   console.log(`Connection type: ${connectionType}`);
   console.log(`Search Folders: ${searchFolders.join(', ')}`);
   console.log(`Unit scope names: ${unitScopeNames.join(', ')}`);
+  console.log(`Prefetch units: ${prefetchUnits}`);
   console.log(`Main log level: ${logMainLevel}`);
   console.log(`Main log file: ${logMainFile}`);
   console.log(`AntlrError log level: ${logAntlrErrorLevel}`);
@@ -168,7 +174,8 @@ export function activate(context: vscode.ExtensionContext) {
     // Pass initialization options
     initializationOptions: {
       SearchFolders: searchFolders,
-      unitScopeNames: unitScopeNames
+      unitScopeNames: unitScopeNames,
+      prefetchUnits: prefetchUnits,
     }
   };
 

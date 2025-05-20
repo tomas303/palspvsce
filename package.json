@@ -89,6 +89,11 @@
           "default": [],
           "description": "Array of unit scope names for units resolution."
         },
+        "pascalLanguageServer.prefetchUnits": {
+          "type": "boolean",
+          "default": "false",
+          "description": "Prefetch all units'' structure on init."
+        },
         "pascalLanguageServer.connectionType": {
           "type": "string",
           "enum": ["stdio", "tcp"],
