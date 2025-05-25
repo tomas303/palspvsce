@@ -164,17 +164,6 @@
           "enum": ["debug", "info", "warn", "error", "none"],
           "default": "none",
           "description": "Antlr trace log level."
-        },
-        "pascalLanguageServer.logStructureFile": {
-          "type": "string",
-          "default": "",
-          "description": "Structure log path(default stderr)."
-        },
-        "pascalLanguageServer.logStructureLevel": {
-          "type": "string",
-          "enum": ["debug", "info", "warn", "error", "none"],
-          "default": "none",
-          "description": "Structure log level."
         }
       }
     }
