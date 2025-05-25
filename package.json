@@ -15,6 +15,28 @@
     "onLanguage:objectpascal"
   ],
   "contributes": {
+    "commands": [
+      {
+        "command": "pascalLanguageServer.dumpScopes",
+        "title": "Dump Scopes",
+        "category": "Pascal"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "resourceLangId == pascal || resourceLangId == objectpascal",
+          "command": "pascalLanguageServer.dumpScopes",
+          "group": "pascal@1"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "pascalLanguageServer.dumpScopes",
+          "when": "resourceLangId == pascal || resourceLangId == objectpascal"
+        }
+      ]
+    },
     "languages": [
       {
         "id": "pascal",

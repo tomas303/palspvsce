@@ -19,96 +19,128 @@ type ServerOptions =
 
 let client: any;
 
-export function activate(context: vscode.ExtensionContext) {
-  console.log('Pascal LSP Extension activating...');
-  
-  // Get server path from configuration
+// Helper function to register custom commands
+function registerCustomCommands(context: vscode.ExtensionContext) {
+  const dumpScopesCommand = vscode.commands.registerCommand('pascalLanguageServer.dumpScopes', async (uri?: vscode.Uri) => {
+    if (!client) {
+      vscode.window.showErrorMessage('Pascal Language Server is not running');
+      return;
+    }
+
+    // Get the active editor or use the provided URI
+    const activeEditor = vscode.window.activeTextEditor;
+    const targetUri = uri || activeEditor?.document.uri;
+    
+    if (!targetUri) {
+      vscode.window.showErrorMessage('No Pascal file is currently open');
+      return;
+    }
+
+    // Check if the file is a Pascal file
+    const document = await vscode.workspace.openTextDocument(targetUri);
+    if (document.languageId !== 'pascal' && document.languageId !== 'objectpascal') {
+      vscode.window.showErrorMessage('The selected file is not a Pascal file');
+      return;
+    }
+
+    try {
+      // Send custom request to the language server
+      const result = await client.sendRequest('pascal/dumpScopes', {
+        textDocument: {
+          uri: targetUri.toString()
+        }
+      });
+
+      // Handle response as an object with nested dump property
+      if (result && typeof result === 'object' && result.dump && typeof result.dump === 'string') {
+        const newDocument = await vscode.workspace.openTextDocument({
+          content: result.dump,
+          language: 'plaintext'
+        });
+        
+        // Show the document in a new editor
+        await vscode.window.showTextDocument(newDocument);
+      } else {
+        vscode.window.showInformationMessage('No scope information available for this file');
+      }
+    } catch (error) {
+      console.error('Error executing DumpScopes command:', error);
+      vscode.window.showErrorMessage(`Failed to dump scopes: ${error}`);
+    }
+  });
+
+  // Add command to subscriptions
+  context.subscriptions.push(dumpScopesCommand);
+}
+
+// Helper function to get configuration values
+function getConfiguration() {
   const config = vscode.workspace.getConfiguration('pascalLanguageServer');
-  const serverPath = config.get<string>('serverPath');
   
-  if (!serverPath || serverPath.trim() === '') {
-    vscode.window.showErrorMessage('Pascal Language Server path not configured. Please set "pascalLanguageServer.serverPath" in settings.');
-    return;
-  }
+  return {
+    serverPath: config.get<string>('serverPath'),
+    searchFolders: config.get<string[]>('searchFolders') || [],
+    unitScopeNames: config.get<string[]>('unitScopeNames') || [],
+    prefetchUnits: (() => {
+      const prefetchUnitsValue = config.get('prefetchUnits');
+      return typeof prefetchUnitsValue === 'string' ? 
+        prefetchUnitsValue.toLowerCase() === 'true' : 
+        Boolean(prefetchUnitsValue);
+    })(),
+    connectionType: config.get<string>('connectionType') || 'stdio',
+    tcpPort: config.get<number>('tcpPort') || 8080,
+    tcpHost: config.get<string>('tcpHost') || 'localhost',
+    logMainFile: config.get<string>('logMainFile') || '',
+    logMainLevel: config.get<string>('logMainLevel') || '',
+    logAntlrErrorFile: config.get<string>('logAntlrErrorFile') || '',
+    logAntlrErrorLevel: config.get<string>('logAntlrErrorLevel') || '',
+    logAntlrTraceFile: config.get<string>('logAntlrTraceFile') || '',
+    logAntlrTraceLevel: config.get<string>('logAntlrTraceLevel') || '',
+    logStructureFile: config.get<string>('logStructureFile') || '',
+    logStructureLevel: config.get<string>('logStructureLevel') || ''
+  };
+}
 
-  // Get search folders from configuration
-  const searchFolders = config.get<string[]>('searchFolders') || [];
-  const unitScopeNames = config.get<string[]>('unitScopeNames') || [];
-  // Ensure boolean value regardless of how it's stored in JSON
-  const prefetchUnitsValue = config.get('prefetchUnits');
-  const prefetchUnits = typeof prefetchUnitsValue === 'string' ? 
-    prefetchUnitsValue.toLowerCase() === 'true' : 
-    Boolean(prefetchUnitsValue);
-  
-  // Get connection type and TCP settings
-  const connectionType = config.get<string>('connectionType') || 'stdio';
-  const tcpPort = config.get<number>('tcpPort') || 8080;
-  const tcpHost = config.get<string>('tcpHost') || 'localhost';
-  
-  // Get logging configuration
-  const logMainFile = config.get<string>('logMainFile') || '';
-  const logMainLevel = config.get<string>('logMainLevel') || '';
-  const logAntlrErrorFile = config.get<string>('logAntlrErrorFile') || '';
-  const logAntlrErrorLevel = config.get<string>('logAntlrErrorLevel') || '';
-  const logAntlrTraceFile = config.get<string>('logAntlrTraceFile') || '';
-  const logAntlrTraceLevel = config.get<string>('logAntlrTraceLevel') || '';
-  const logStructureFile = config.get<string>('logStructureFile') || '';
-  const logStructureLevel = config.get<string>('logStructureLevel') || '';
-
-  console.log(`Using Pascal Language Server: ${serverPath}`);
-  console.log(`Connection type: ${connectionType}`);
-  console.log(`Search Folders: ${searchFolders.join(', ')}`);
-  console.log(`Unit scope names: ${unitScopeNames.join(', ')}`);
-  console.log(`Prefetch units: ${prefetchUnits}`);
-  console.log(`Main log level: ${logMainLevel}`);
-  console.log(`Main log file: ${logMainFile}`);
-  console.log(`AntlrError log level: ${logAntlrErrorLevel}`);
-  console.log(`AntlrError log file: ${logAntlrErrorFile}`);
-  console.log(`AntlrTrace log level: ${logAntlrTraceLevel}`);
-  console.log(`AntlrTrace log file: ${logAntlrTraceFile}`);
-  console.log(`Structure log level: ${logStructureLevel}`);
-  console.log(`Structure log file: ${logStructureFile}`);
-  
-  // Prepare command line arguments
+// Helper function to build command line arguments
+function buildCommandLineArgs(config: ReturnType<typeof getConfiguration>): string[] {
   const commandLineArgs: string[] = [];
   
-  if (logMainLevel && logMainLevel !== 'none') {
-    commandLineArgs.push(`-log-level-main=${logMainLevel}`);
+  if (config.logMainLevel && config.logMainLevel !== 'none') {
+    commandLineArgs.push(`-log-level-main=${config.logMainLevel}`);
   }
-  if (logMainFile) {
-    commandLineArgs.push(`-log-file-main=${logMainFile}`);
+  if (config.logMainFile) {
+    commandLineArgs.push(`-log-file-main=${config.logMainFile}`);
   }
-  if (logAntlrErrorLevel && logAntlrErrorLevel !== 'none') {
-    commandLineArgs.push(`-log-level-antlr-error=${logAntlrErrorLevel}`);
+  if (config.logAntlrErrorLevel && config.logAntlrErrorLevel !== 'none') {
+    commandLineArgs.push(`-log-level-antlr-error=${config.logAntlrErrorLevel}`);
   }
-  if (logAntlrErrorFile) {
-    commandLineArgs.push(`-log-file-antlr-error=${logAntlrErrorFile}`);
+  if (config.logAntlrErrorFile) {
+    commandLineArgs.push(`-log-file-antlr-error=${config.logAntlrErrorFile}`);
   }
-  if (logAntlrTraceLevel && logAntlrTraceLevel !== 'none') {
-    commandLineArgs.push(`-log-level-antlr-trace=${logAntlrTraceLevel}`);
+  if (config.logAntlrTraceLevel && config.logAntlrTraceLevel !== 'none') {
+    commandLineArgs.push(`-log-level-antlr-trace=${config.logAntlrTraceLevel}`);
   }
-  if (logAntlrTraceFile) {
-    commandLineArgs.push(`-log-file-antlr-trace=${logAntlrTraceFile}`);
+  if (config.logAntlrTraceFile) {
+    commandLineArgs.push(`-log-file-antlr-trace=${config.logAntlrTraceFile}`);
   }
-  if (logStructureLevel && logStructureLevel !== 'none') {
-    commandLineArgs.push(`-log-level-structure=${logStructureLevel}`);
+  if (config.logStructureLevel && config.logStructureLevel !== 'none') {
+    commandLineArgs.push(`-log-level-structure=${config.logStructureLevel}`);
   }
-  if (logStructureFile) {
-    commandLineArgs.push(`-log-file-structure=${logStructureFile}`);
+  if (config.logStructureFile) {
+    commandLineArgs.push(`-log-file-structure=${config.logStructureFile}`);
   }
   
-  
+  return commandLineArgs;
+}
 
-
-  // Define server options based on connection type
-  let serverOptions: ServerOptions;
-  
-  if (connectionType === 'tcp') {
-    console.log(`Connecting via TCP: ${tcpHost}:${tcpPort}`);
+// Helper function to create server options
+function createServerOptions(config: ReturnType<typeof getConfiguration>, commandLineArgs: string[]): ServerOptions {
+  if (config.connectionType === 'tcp') {
+    console.log(`Connecting via TCP: ${config.tcpHost}:${config.tcpPort}`);
     // For TCP server connection
-    serverOptions = () => {
+    return () => {
       // Connect to language server via socket
-      const socket = net.connect({ port: tcpPort, host: tcpHost });
+      const socket = net.connect({ port: config.tcpPort, host: config.tcpHost });
       
       socket.on('error', (e) => {
         console.error(`Socket error: ${e}`);
@@ -121,23 +153,6 @@ export function activate(context: vscode.ExtensionContext) {
         reader: socket
       };
       
-      // Only start the server if we're managing it (comment this out if you're launching manually)
-      /*
-      const cp = require('child_process');
-      try {
-        // Pass the port to your server - port flag might also use dashes, adjust if needed
-        const tcpArgs = [...commandLineArgs, `-port=${tcpPort}`];
-        const serverProcess = cp.spawn(serverPath, tcpArgs, { 
-          detached: true,
-          stdio: 'ignore'
-        });
-        console.log(`Server process started with PID: ${serverProcess.pid}`);
-        serverProcess.unref(); // Don't wait for the child process
-      } catch (error) {
-        console.error(`Failed to start server process: ${error}`);
-      }
-      */
-      
       return Promise.resolve(result);
     };
   } else {
@@ -146,20 +161,22 @@ export function activate(context: vscode.ExtensionContext) {
     console.log(`Command line args: ${commandLineArgs.join(' ')}`);
     
     // Single server options configuration with command line arguments
-    serverOptions = {
+    return {
       run: { 
-        command: serverPath,
+        command: config.serverPath!,
         args: commandLineArgs
       },
       debug: { 
-        command: serverPath, 
+        command: config.serverPath!, 
         args: commandLineArgs
       }
     };
   }
+}
 
-  // Options to control the language client
-  const clientOptions = {
+// Helper function to create client options
+function createClientOptions(config: ReturnType<typeof getConfiguration>) {
+  return {
     // Register the server for Pascal documents
     documentSelector: [
       { scheme: 'file', language: 'pascal' },
@@ -173,20 +190,15 @@ export function activate(context: vscode.ExtensionContext) {
     },
     // Pass initialization options
     initializationOptions: {
-      SearchFolders: searchFolders,
-      unitScopeNames: unitScopeNames,
-      prefetchUnits: prefetchUnits,
+      SearchFolders: config.searchFolders,
+      unitScopeNames: config.unitScopeNames,
+      prefetchUnits: config.prefetchUnits,
     }
   };
+}
 
-  // Create the language client and start the client
-  client = new LanguageClient(
-    'pascalLanguageServer',
-    'Pascal Language Server',
-    serverOptions,
-    clientOptions
-  );
-
+// Helper function to register event handlers
+function registerEventHandlers(context: vscode.ExtensionContext) {
   // Register workspace folder change event handler
   context.subscriptions.push(
     vscode.workspace.onDidChangeWorkspaceFolders(e => {
@@ -208,6 +220,54 @@ export function activate(context: vscode.ExtensionContext) {
       }
     })
   );
+}
+
+export function activate(context: vscode.ExtensionContext) {
+  console.log('Pascal LSP Extension activating...');
+  
+  // Get configuration
+  const config = getConfiguration();
+  
+  if (!config.serverPath || config.serverPath.trim() === '') {
+    vscode.window.showErrorMessage('Pascal Language Server path not configured. Please set "pascalLanguageServer.serverPath" in settings.');
+    return;
+  }
+
+  // Log configuration
+  console.log(`Using Pascal Language Server: ${config.serverPath}`);
+  console.log(`Connection type: ${config.connectionType}`);
+  console.log(`Search Folders: ${config.searchFolders.join(', ')}`);
+  console.log(`Unit scope names: ${config.unitScopeNames.join(', ')}`);
+  console.log(`Prefetch units: ${config.prefetchUnits}`);
+  console.log(`Main log level: ${config.logMainLevel}`);
+  console.log(`Main log file: ${config.logMainFile}`);
+  console.log(`AntlrError log level: ${config.logAntlrErrorLevel}`);
+  console.log(`AntlrError log file: ${config.logAntlrErrorFile}`);
+  console.log(`AntlrTrace log level: ${config.logAntlrTraceLevel}`);
+  console.log(`AntlrTrace log file: ${config.logAntlrTraceFile}`);
+  console.log(`Structure log level: ${config.logStructureLevel}`);
+  console.log(`Structure log file: ${config.logStructureFile}`);
+  
+  // Build command line arguments
+  const commandLineArgs = buildCommandLineArgs(config);
+  
+  // Create server and client options
+  const serverOptions = createServerOptions(config, commandLineArgs);
+  const clientOptions = createClientOptions(config);
+
+  // Create the language client
+  client = new LanguageClient(
+    'pascalLanguageServer',
+    'Pascal Language Server',
+    serverOptions,
+    clientOptions
+  );
+
+  // Register custom commands
+  registerCustomCommands(context);
+  
+  // Register event handlers
+  registerEventHandlers(context);
 
   // Start the client. This will also launch the server
   client.start();
