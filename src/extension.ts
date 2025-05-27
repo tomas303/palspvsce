@@ -69,8 +69,57 @@ function registerCustomCommands(context: vscode.ExtensionContext) {
     }
   });
 
-  // Add command to subscriptions
+  const dumpDBScopesCommand = vscode.commands.registerCommand('pascalLanguageServer.dumpDBScopes', async (uri?: vscode.Uri) => {
+    if (!client) {
+      vscode.window.showErrorMessage('Pascal Language Server is not running');
+      return;
+    }
+
+    // Get the active editor or use the provided URI
+    const activeEditor = vscode.window.activeTextEditor;
+    const targetUri = uri || activeEditor?.document.uri;
+    
+    if (!targetUri) {
+      vscode.window.showErrorMessage('No Pascal file is currently open');
+      return;
+    }
+
+    // Check if the file is a Pascal file
+    const document = await vscode.workspace.openTextDocument(targetUri);
+    if (document.languageId !== 'pascal' && document.languageId !== 'objectpascal') {
+      vscode.window.showErrorMessage('The selected file is not a Pascal file');
+      return;
+    }
+
+    try {
+      // Send custom request to the language server (only URI, no text content)
+      const result = await client.sendRequest('pascal/dumpDBScopes', {
+        textDocument: {
+          uri: targetUri.toString()
+        }
+      });
+
+      // Handle response as an object with nested dump property
+      if (result && typeof result === 'object' && result.dump && typeof result.dump === 'string') {
+        const newDocument = await vscode.workspace.openTextDocument({
+          content: result.dump,
+          language: 'plaintext'
+        });
+        
+        // Show the document in a new editor
+        await vscode.window.showTextDocument(newDocument);
+      } else {
+        vscode.window.showInformationMessage('No DB scope information available for this file');
+      }
+    } catch (error) {
+      console.error('Error executing DumpDBScopes command:', error);
+      vscode.window.showErrorMessage(`Failed to dump DB scopes: ${error}`);
+    }
+  });
+
+  // Add commands to subscriptions
   context.subscriptions.push(dumpScopesCommand);
+  context.subscriptions.push(dumpDBScopesCommand);
 }
 
 // Helper function to get configuration values

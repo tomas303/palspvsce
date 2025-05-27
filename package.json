@@ -20,6 +20,11 @@
         "command": "pascalLanguageServer.dumpScopes",
         "title": "Dump Scopes",
         "category": "Pascal"
+      },
+      {
+        "command": "pascalLanguageServer.dumpDBScopes",
+        "title": "Dump DB Scopes",
+        "category": "Pascal"
       }
     ],
     "menus": {
@@ -28,11 +33,20 @@
           "when": "resourceLangId == pascal || resourceLangId == objectpascal",
           "command": "pascalLanguageServer.dumpScopes",
           "group": "pascal@1"
+        },
+        {
+          "when": "resourceLangId == pascal || resourceLangId == objectpascal",
+          "command": "pascalLanguageServer.dumpDBScopes",
+          "group": "pascal@2"
         }
       ],
       "commandPalette": [
         {
           "command": "pascalLanguageServer.dumpScopes",
+          "when": "resourceLangId == pascal || resourceLangId == objectpascal"
+        },
+        {
+          "command": "pascalLanguageServer.dumpDBScopes",
           "when": "resourceLangId == pascal || resourceLangId == objectpascal"
         }
       ]
