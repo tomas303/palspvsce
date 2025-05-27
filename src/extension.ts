@@ -117,9 +117,112 @@ function registerCustomCommands(context: vscode.ExtensionContext) {
     }
   });
 
+  const executeSQLQueryCommand = vscode.commands.registerCommand('pascalLanguageServer.executeSQLQuery', async (uri?: vscode.Uri) => {
+    if (!client) {
+      vscode.window.showErrorMessage('Pascal Language Server is not running');
+      return;
+    }
+
+    // Get SQL query history from global state
+    const sqlHistory = context.globalState.get<string[]>('sqlQueryHistory', []);
+    
+    let sqlQuery: string | undefined;
+    
+    if (sqlHistory.length > 0) {
+      // Show quick pick with history and option to enter new query
+      const items: vscode.QuickPickItem[] = [
+        {
+          label: '$(add) Enter new SQL query...',
+          description: 'Type a new SQL query',
+          alwaysShow: true
+        },
+        ...sqlHistory.map(query => ({
+          label: query.length > 60 ? query.substring(0, 60) + '...' : query,
+          description: 'Previous query',
+          detail: query
+        }))
+      ];
+
+      const selectedItem = await vscode.window.showQuickPick(items, {
+        placeHolder: 'Select a previous query or enter a new one',
+        ignoreFocusOut: true
+      });
+
+      if (!selectedItem) {
+        return; // User cancelled
+      }
+
+      if (selectedItem.label.startsWith('$(add)')) {
+        // User wants to enter a new query
+        sqlQuery = await vscode.window.showInputBox({
+          prompt: 'Enter SQL query to execute',
+          placeHolder: 'SELECT * FROM ...',
+          ignoreFocusOut: true,
+          validateInput: (value: string) => {
+            if (!value || value.trim().length === 0) {
+              return 'SQL query cannot be empty';
+            }
+            return null;
+          }
+        });
+      } else {
+        // User selected a previous query
+        sqlQuery = selectedItem.detail || selectedItem.label;
+      }
+    } else {
+      // No history, show input box directly
+      sqlQuery = await vscode.window.showInputBox({
+        prompt: 'Enter SQL query to execute',
+        placeHolder: 'SELECT * FROM ...',
+        ignoreFocusOut: true,
+        validateInput: (value: string) => {
+          if (!value || value.trim().length === 0) {
+            return 'SQL query cannot be empty';
+          }
+          return null;
+        }
+      });
+    }
+
+    // User cancelled the input
+    if (sqlQuery === undefined) {
+      return;
+    }
+
+    const trimmedQuery = sqlQuery.trim();
+
+    // Update history (add to beginning, remove duplicates, limit to 10 items)
+    const updatedHistory = [trimmedQuery, ...sqlHistory.filter(q => q !== trimmedQuery)].slice(0, 10);
+    await context.globalState.update('sqlQueryHistory', updatedHistory);
+
+    try {
+      // Send custom request to the language server with only SQL query (no URI)
+      const result = await client.sendRequest('pascal/executeSQLQuery', {
+        sqlQuery: trimmedQuery
+      });
+
+      // Handle response as an object with nested dump property (consistent with other commands)
+      if (result && typeof result === 'object' && result.dump && typeof result.dump === 'string') {
+        const newDocument = await vscode.workspace.openTextDocument({
+          content: result.dump,
+          language: 'plaintext'
+        });
+        
+        // Show the document in a new editor
+        await vscode.window.showTextDocument(newDocument);
+      } else {
+        vscode.window.showInformationMessage('No results returned from SQL query');
+      }
+    } catch (error) {
+      console.error('Error executing SQL query command:', error);
+      vscode.window.showErrorMessage(`Failed to execute SQL query: ${error}`);
+    }
+  });
+
   // Add commands to subscriptions
   context.subscriptions.push(dumpScopesCommand);
   context.subscriptions.push(dumpDBScopesCommand);
+  context.subscriptions.push(executeSQLQueryCommand);
 }
 
 // Helper function to get configuration values

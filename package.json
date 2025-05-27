@@ -25,6 +25,11 @@
         "command": "pascalLanguageServer.dumpDBScopes",
         "title": "Dump DB Scopes",
         "category": "Pascal"
+      },
+      {
+        "command": "pascalLanguageServer.executeSQLQuery",
+        "title": "Execute SQL Query",
+        "category": "Pascal"
       }
     ],
     "menus": {
@@ -38,6 +43,11 @@
           "when": "resourceLangId == pascal || resourceLangId == objectpascal",
           "command": "pascalLanguageServer.dumpDBScopes",
           "group": "pascal@2"
+        },
+        {
+          "when": "resourceLangId == pascal || resourceLangId == objectpascal",
+          "command": "pascalLanguageServer.executeSQLQuery",
+          "group": "pascal@3"
         }
       ],
       "commandPalette": [
@@ -47,6 +57,10 @@
         },
         {
           "command": "pascalLanguageServer.dumpDBScopes",
+          "when": "resourceLangId == pascal || resourceLangId == objectpascal"
+        },
+        {
+          "command": "pascalLanguageServer.executeSQLQuery",
           "when": "resourceLangId == pascal || resourceLangId == objectpascal"
         }
       ]
