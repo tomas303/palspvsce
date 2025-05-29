@@ -139,6 +139,14 @@
           "default": [],
           "description": "Array of unit scope names for units resolution."
         },
+        "pascalLanguageServer.defines": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Array of preprocessor defines (e.g., DEBUG, WINDOWS, DELPHI)."
+        },
         "pascalLanguageServer.prefetchUnits": {
           "type": "boolean",
           "default": "false",

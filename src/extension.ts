@@ -233,6 +233,7 @@ function getConfiguration() {
     serverPath: config.get<string>('serverPath'),
     searchFolders: config.get<string[]>('searchFolders') || [],
     unitScopeNames: config.get<string[]>('unitScopeNames') || [],
+    defines: config.get<string[]>('defines') || [],
     prefetchUnits: (() => {
       const prefetchUnitsValue = config.get('prefetchUnits');
       return typeof prefetchUnitsValue === 'string' ? 
@@ -344,6 +345,7 @@ function createClientOptions(config: ReturnType<typeof getConfiguration>) {
     initializationOptions: {
       SearchFolders: config.searchFolders,
       unitScopeNames: config.unitScopeNames,
+      defines: config.defines,
       prefetchUnits: config.prefetchUnits,
     }
   };
@@ -390,6 +392,7 @@ export function activate(context: vscode.ExtensionContext) {
   console.log(`Connection type: ${config.connectionType}`);
   console.log(`Search Folders: ${config.searchFolders.join(', ')}`);
   console.log(`Unit scope names: ${config.unitScopeNames.join(', ')}`);
+  console.log(`Defines: ${config.defines.join(', ')}`);
   console.log(`Prefetch units: ${config.prefetchUnits}`);
   console.log(`Main log level: ${config.logMainLevel}`);
   console.log(`Main log file: ${config.logMainFile}`);
